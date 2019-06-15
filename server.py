@@ -1,9 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for, request, make_response
 import mysql.connector as mariadb
 import requests
+import datetime
 app = Flask(__name__)
 
 #
@@ -35,8 +36,17 @@ def login():
    if request.method == 'POST':
       login = request.form['login']
       password = request.form['password']
-      if validasenha(login, password):      
-         return redirect(url_for('success',name = login, pwd = password))
+
+      dados = validasenha(login, password)
+
+      if len(dados) > 0:      
+         dado = dados.split(",")
+         resp = make_response(render_template('home.html'))
+         resp.set_cookie('login', dado[0])
+         resp.set_cookie('name', dado[1])
+         resp.set_cookie('birthday', dado[2])
+         resp.set_cookie('email', dado[3])
+         return resp
       else:
          return render_template('home.html', erro = True, login = login)   
    else:
@@ -62,6 +72,12 @@ def adduser():
          return render_template('home.html', erroadd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
 
+      resp = make_response(render_template('home.html'))
+      resp.set_cookie('login', login)
+      resp.set_cookie('name', name)
+      resp.set_cookie('birthday', birthday)
+      resp.set_cookie('email', email)
+
       return redirect(url_for('success',name = login, pwd = cpassword))
    else:
       return render_template('home.html')
@@ -72,15 +88,14 @@ def adduser():
 def validasenha(login, password):
    mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
    cursor = mariadb_connection.cursor()
+   ret = ""
+
+   cursor.execute("SELECT LOGIN_USUARIO,NOME_USUARIO,DT_NASCIMENTO_USUARIO,E_MAIL_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s AND SENHA_USUARIO=%s", (login, password))
    
-   cursor.execute("SELECT 1 FROM USUARIO WHERE LOGIN_USUARIO=%s AND SENHA_USUARIO=%s", (login, password))
-   if cursor.fetchone():
-      print("senha ok")
-      ret = True
-   else:
-      print("senha invalida")
-      ret = False
-   
+   for LOGIN_USUARIO, NOME_USUARIO, DT_NASCIMENTO_USUARIO, E_MAIL_USUARIO in cursor:
+      ret = LOGIN_USUARIO+","+NOME_USUARIO+","+DT_NASCIMENTO_USUARIO.strftime('%m/%d/%Y')+","+E_MAIL_USUARIO
+      print("senha ok")      
+    
    mariadb_connection.close()
    return ret   
 
