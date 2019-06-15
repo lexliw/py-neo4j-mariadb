@@ -1,4 +1,8 @@
 # Use root/example as user/password credentials
+# caso não suba o neo4j executar o comando abaixo
+# sudo chown systemd-timesync:systemd-journal ./import
+# sudo chown systemd-timesync:systemd-journal ./conf
+
 version: '3.1'
 
 services:
@@ -6,11 +10,27 @@ services:
   db:
     image: mariadb
     restart: always
+    volumes:
+      - ./Scripts_relacional.sql:/docker-entrypoint-initdb.d/dump.sql
     environment:
       MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: imdbfriends
+    ports:
+      - 8084:3306
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+
+  neo4j:
+    image: neo4j
+    restart: always
+    volumes:
+      - ./data:/data
+      - ./import:/import
+      - ./conf:/conf
+    ports:
+      - 7474:7474
+      - 7687:7687

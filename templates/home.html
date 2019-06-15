@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Materialize</title>
+  <title>IMDB Friends</title>
 
 </head>
 <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
@@ -13,32 +13,41 @@
 <body style="margin-left: 20px; margin-right: 20px">
 
 
-
   <div class="row container">
-    <div class="col s12 center-align">
-      <h1>IMDB for Friends</h1>
+    <div class="col s12 center-align yellow-text text-accent-4">
+      <h1>IMDB Friends</h1>
     </div>
     <div class="col s1"></div>
     <div class="col s4 z-depth-5 center-align">
       <ul class="collapsible">
         <li>
+          {% if erro %}
+          <div class="red-text">
+            <p>usu&#225;rio ou senha inv&#225;lido</p>
+          </div>
+          {% endif %}
           <div class="collapsible-header"><i class="material-icons">person</i>Logar</div>
           <div class="collapsible-body">
-            <div class="input-field">
-              <input id="first_name" type="text" class="validate">
-              <label for="first_name">Login</label>
-            </div>
-            <div class="input-field">
-              <input id="password" type="password" class="validate">
-              <label for="password">Password</label>
-            </div>
-            <div>
-              <h4>
-                <button class="btn waves-effect waves-light" type="submit" name="action">Entrar
-                  <i class="material-icons right">send</i>
-                </button>
-              </h4>
-            </div>
+
+            <form action="http://localhost:5000/login" method="post">
+              <div class="input-field">
+                <input name="login" id="login" type="text" class="validate" value="{{ login }}">
+                <label for="login">Login</label>
+              </div>
+              <div class="input-field">
+                <input name="password" id="password" type="password" class="validate">
+                <label for="password">Password</label>
+              </div>
+              <div>
+                <h4>
+                  <button class="btn waves-effect waves-light" type="submit" name="action">Entrar
+                    <i class="material-icons right">send</i>
+                  </button>
+                </h4>
+              </div>
+            </form>
+
+
           </div>
         </li>
       </ul>
@@ -48,49 +57,65 @@
     <div class="col s4 z-depth-5 center-align">
       <ul class="collapsible">
         <li>
+            {% if errologin %}
+            <div class="red-text">
+              <p>esse login j&#225; existe, excolha outro.</p>
+            </div>
+            {% endif %}            
+            {% if erropasswd %}
+            <div class="red-text">
+              <p>Password n&#227;o confere.</p>
+            </div>
+            {% endif %}
+            {% if erroadd %}
+            <div class="red-text">
+              <p>erro na grava&#231;&#227;, tente novamente mais tarde.</p>
+            </div>
+            {% endif %}
           <div class="collapsible-header"><i class="material-icons">create</i>Quero me cadastrar</div>
           <div class="collapsible-body">
-            <div class="input-field col s12">
-              <input id="login" type="text" class="validate">
-              <label for="login">Login</label>
-            </div>
-            <div class="input-field col s12">
-              <input id="last_name" type="text" class="validate">
-              <label for="last_name">Nome completo</label>
-            </div>
-            <div class="input-field col s12">
-                <input placeholder="1999-12-31" type="text" class="datepicker">
-              <label for="last_name">Data de Aniversário</label>
-            </div>
-            <div class="input-field col s12">
-              <input id="email" type="email" class="validate">
-              <label for="email">Email</label>
-            </div>
-            <div class="input-field col s12">
-              <input id="password" type="password" class="validate">
-              <label for="password">Password</label>
-            </div>
-            <div class="input-field col s12">
-              <input id="password" type="password" class="validate">
-              <label for="password">Confirme password</label>
-            </div>
-            <div>
-              <h4>
-                <button class="btn waves-effect waves-light" type="submit" name="action">Cadastrar
-                  <i class="material-icons right">send</i>
-                </button>
-              </h4>
-            </div>
+
+            <form action="http://localhost:5000/adduser" method="post">
+              <div class="input-field col s12">
+
+                <input name="clogin" id="clogin" type="text" class="validate" value="{{ clogin }}" required>
+                <label for="clogin">Login</label>
+              </div>
+              <div class="input-field col s12">
+                <input name="name" id="name" type="text" class="validate" value="{{ name }}" required>
+                <label for="name">Nome completo</label>
+              </div>
+              <div class="input-field col s12">
+                <input name="birthday" id="birthday" type="date" class="datepicker" value="{{ birthday }}" required>
+                <label for="birthday">Data de Aniversário</label>
+              </div>
+              <div class="input-field col s12">
+                <input name="email" id="email" type="email" class="validate" value="{{ email }}" required>
+                <label for="email">Email</label>
+              </div>
+              <div class="input-field col s12">
+                <input name="cpassword" id="cpassword" type="password" class="validate" value="{{ cpassword }}" required>
+                <label for="cpassword">Password</label>
+              </div>
+              <div class="input-field col s12">
+                <input name="ccpassword" id="ccpassword" type="password" class="validate" value="{{ ccpassword }}" required>
+                <label for="ccpassword">Confirme password</label>
+              </div>
+              <div>
+                <h4>
+                  <button class="btn waves-effect waves-light" type="submit" name="action">Cadastrar
+                    <i class="material-icons right">send</i>
+                  </button>
+                </h4>
+              </div>
+            </form>
+
           </div>
         </li>
       </ul>
     </div>
     <div class="col s1"></div>
   </div>
-
-
-
-
 
   <!-- Compiled and minified CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
@@ -100,7 +125,7 @@
   <script>
     $(document).ready(function () {
       $('.collapsible').collapsible();
-      $('.datepicker').datepicker({format: 'yyyy-mm-dd' });
+      $('.datepicker').datepicker({ format: 'yyyy-mm-dd' });
     });
   </script>
 

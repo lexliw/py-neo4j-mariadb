@@ -1,0 +1,50 @@
+create index on :USUARIO(id_usuario)
+
+create index on :FILMES_SERIES(id_filme)
+
+-- para criar nós de usuários
+merge (usr1:USUARIO {id_usuario:1000, login_usuario:'mbjoe0',nome_usuario:'MILTON JOSE BARBOSA',dt_nascimento_usuario:'19/03/1972',e_mail_usuario:'mbjoe0@yahoo.com.br',publicar:'S'})
+
+merge (usr2:USUARIO {id_usuario:20000, login_usuario:'jesus_jeova_son',nome_usuario:'JEOVA NAO SEI DO QUE',dt_nascimento_usuario:'01/01/1980',e_mail_usuario:'jeova.leite@gmail.com',publicar:'S'})
+
+using periodic commit load csv with headers from "file:///USUARIOS.CSV" as row merge (usr:USUARIO {id_usuario:toInteger(row.id_usuario), login_usuario:row.login_usuario, nome_usuario:row.nome_usuario, dt_nascimento_usuario:row.dt_nascimento_usuario, e_mail_usuario:row.e_mail_usuario, publicar:row.publicar})
+
+-- acertar nome do usuário
+match (usr:USUARIO) set usr.nome_usuario = replace(usr.nome_usuario,"?"," ") return usr
+
+-- para criar nós de filmes
+merge (filme1:FILMES_SERIES {id_filme:1000, nome_filme:'A ERA DO GELO',ano_lanc_filme:2012,ano_fim_filme:2012,descricao_filme:'Desenho animado com animais no periodo glacial'})
+
+merge (filme2:FILMES_SERIES {id_filme:20000, nome_filme:'O PODEROSO CHEFAO',ano_lanc_filme:1979,ano_fim_filme:1979,descricao_filme:'Estória de guerra entre familias mafiosas rivais'})
+
+using periodic commit load csv with headers from "file:///FILMES_SERIES.CSV" as row merge (filmes:FILMES_SERIES {id_filme:toInteger(row.id_filme), nome_filme:row.nome_filme, ano_lanc_filme:row.ano_lanc_filme, ano_fim_filme:row.ano_fim_filme, descricao_filme:row.descricao_filme})
+
+-- consertar descrição dos filmes
+match (filme:FILMES_SERIES) set filme.descricao_filme = replace(filme.descricao_filme,"?"," ") return filme.descricao_filme
+
+-- para criar relacionamentos entre usuários e filmes
+match (usr:USUARIO {id_usuario:1000}),(filme:FILMES_SERIES {id_filme:1000}) merge (usr)-[:ASSISTIU {dt_ini_assistido:'12/06/2018', dt_fim_assistido:'12/06/2018', resenha:'Muito engraçado', nota:9}]->(filme)
+
+match (usr:USUARIO {id_usuario:2000}),(filme:FILMES_SERIES {id_filme:1000}) merge (usr)-[:ASSISTIU {dt_ini_assistido:'15/10/2018', dt_fim_assistido:'15/10/2018', resenha:'Filme bom pra criança', nota:7}]->(filme)
+
+match (usr:USUARIO {id_usuario:2000}),(filme:FILMES_SERIES {id_filme:2000}) merge (usr)-[:ASSISTIU {dt_ini_assistido:'18/11/2018', dt_fim_assistido:'18/11/2018', resenha:'Filme muito longo. Tedioso mas com boa estória', nota:8}]->(filme)
+
+using periodic commit load csv with headers from "file:///USUARIO_ASSISTIU.CSV" as row match (usr:USUARIO {id_usuario:toInteger(row.id_usuario)}),(filme:FILMES_SERIES {id_filme:toInteger(row.id_filme)}) merge (usr)-[:ASSISTIU {dt_ini_assistido:row.dt_ini_assistido, dt_fim_assistido:row.dt_fim_assistido, resenha:row.resenha, nota:toInteger(row.nota)}]->(filme)
+
+-- para consertar a resenha do relacionamento
+match (usr:USUARIO)-[r:ASSISTIU]->(filme:FILMES_SERIES) set r.resenha = replace(r.resenha,"?"," ") return r.resenha
+
+-- para retornar dados dos usuários relacionados
+match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'/') | toInteger(x)] as parts where usr.id_usuario = 1 return distinct usrdest.login_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[0], month: parts[1], year: parts[2]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc
+
+-- para retornar filmes que usuário logado não viu e que sua rede de relacionamentos viu
+match (filmedest:FILMES_SERIES)<-[:ASSISTIU]-(usrdest:USUARIO)-[:ASSISTIU]->(filmeori:FILMES_SERIES)<-[:ASSISTIU]-(usr:USUARIO) where usr.id_usuario = 1 and not exists ((usr:USUARIO)-[:ASSISTIU]->(filmedest:FILMES_SERIES)) return distinct filmedest
+
+-- para deletar um ralacionamento
+match (usr1:USUARIO {id_usuario:2})-[r:ASSISTIU]->(filme1:FILMES_SERIES {id_filme:2}) delete r
+
+-- para deletar um nó de usuário
+match (usr:USUARIO {id_usuario:2}) detach delete usr
+
+-- para deletar um nó de filme
+match (filme:FILMES_SERIES {id_filme:2}) detach delete filme
