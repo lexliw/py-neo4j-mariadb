@@ -5,6 +5,9 @@ from flask import Flask, render_template, redirect, url_for, request, make_respo
 import mysql.connector as mariadb
 import requests
 import datetime
+from Crypto.Cipher import AES
+import pybase64
+
 app = Flask(__name__)
 
 #
@@ -22,14 +25,49 @@ headers = {
       'cache-control': "no-cache",
       'Postman-Token': "cabdfe37-849c-4aac-9b1a-65be296af5bd"
       }
+salt = '!%F=-?Jc3301'
+key32 = "{: <32}".format(salt).encode("utf-8")
+cipher = AES.new(key32, AES.MODE_ECB)
 
 @app.route('/')
 def index():
    return render_template('home.html')
 
-@app.route('/success/<name>/<pwd>')
-def success(name, pwd):
-   return 'welcome %s %s' %(name, pwd) 
+@app.route('/filmes/<data>')
+def filmes(data):
+
+   decoded = cipher.decrypt(pybase64.urlsafe_b64decode(data))
+   dado = decoded.strip().split(",")
+
+   dt = dado[2].split("/")
+   niver = dt[2]+"-"+dt[1]+"-"+dt[0]
+   
+
+   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3] ))
+   resp.set_cookie('login', dado[0])
+   resp.set_cookie('name', dado[1])
+   resp.set_cookie('birthday', dado[2])
+   resp.set_cookie('email', dado[3])
+   return resp
+   # return 'welcome %s %s' %(dado[3], dado[1]) 
+
+
+@app.route('/updateuser/<login>',methods = ['POST', 'GET'])
+def updateuser(login):
+   if request.method == 'POST':
+      name = request.form['name']
+      birthday = request.form['birthday']
+      email = request.form['email']
+
+      if updateuserNOK(login, name, birthday, email):      
+         return False
+
+      print("Atualizado com sucesso")
+      return True
+   else:
+      return False
+
+
 
 @app.route('/login',methods = ['POST', 'GET'])
 def login():
@@ -40,15 +78,13 @@ def login():
       dados = validasenha(login, password)
 
       if len(dados) > 0:      
-         dado = dados.split(",")
-         resp = make_response(render_template('home.html'))
-         resp.set_cookie('login', dado[0])
-         resp.set_cookie('name', dado[1])
-         resp.set_cookie('birthday', dado[2])
-         resp.set_cookie('email', dado[3])
-         return resp
+         chunck = dados
+         if (len(chunck)%16!=0):
+            chunck+= ' ' * (16-len(chunck)%16)         
+         encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
+         return redirect(url_for('filmes',data = encoded))
       else:
-         return render_template('home.html', erro = True, login = login)   
+         return render_template('filmes.html', erro = True, login = login)   
    else:
       return render_template('home.html')
 
@@ -71,14 +107,13 @@ def adduser():
       if adduserNOK(login, name, birthday, email, cpassword):
          return render_template('home.html', erroadd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
+      # resp = make_response(render_template('filmes.html'))
+      # resp.set_cookie('login', login)
+      # resp.set_cookie('name', name)
+      # resp.set_cookie('birthday', birthday)
+      # resp.set_cookie('email', email)
 
-      resp = make_response(render_template('home.html'))
-      resp.set_cookie('login', login)
-      resp.set_cookie('name', name)
-      resp.set_cookie('birthday', birthday)
-      resp.set_cookie('email', email)
-
-      return redirect(url_for('success',name = login, pwd = cpassword))
+      return redirect(url_for('filmes',login = login, name = name, birthday = birthday,email = email ))
    else:
       return render_template('home.html')
 
@@ -132,8 +167,31 @@ def adduserNOK(login, name, birthday, email, cpassword):
       cursor.execute("SELECT ID_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s", (login,))
       for ID_USUARIO in cursor:
          id=str(ID_USUARIO).replace("(","").replace(",)","")
+         #insert no neo4j
          payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:'"+id+"', login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+birthday+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
-      #insert no neo4j
+      response = requests.request("POST", url, data=payload, headers=headers)
+      print(response.text)
+
+   mariadb_connection.close()
+   return ret 
+
+def updateuserNOK(login, name, birthday, email):
+   mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
+   cursor = mariadb_connection.cursor()
+   ret = False
+   #update na mariadb
+   try:
+      cursor.execute("UPDATE USUARIO SET NOME_USUARIO = %s, DT_NASCIMENTO_USUARIO = %s, E_MAIL_USUARIO = %s WHERE LOGIN_USUARIO=%s", (name, birthday, email, login))
+   except mariadb.Error as error:
+      print("Error: {}".format(error))
+      ret = True
+
+   mariadb_connection.commit()
+   print "The last inserted id was: ", cursor.lastrowid   
+
+   if ret == False:
+      #update no neo4j
+      payload = "{\n  \"query\" : \"match (u:USUARIO{login_usuario:'teste123'}) WITH u, u {.*} as snapshot SET u.nome_usuario = '"+name+"' SET u.dt_nascimento_usuario = '"+birthday+"' SET u.e_mail_usuario = '"+email+"' RETURN snapshot\",\n  \"params\" : { }\n}\n"
       response = requests.request("POST", url, data=payload, headers=headers)
       print(response.text)
 

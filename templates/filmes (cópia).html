@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>IMDB Friends</title>
+
+</head>
+
+<body style="margin-left: 20px; margin-right: 20px">
+    <div class="row">
+        <div class="col s2"></div>
+        <div class="col s8 center-align yellow-text text-accent-4">
+            <h4>IMDB Friends</h4>
+        </div>
+        <div class="col s2 grey-text valign-wrapper">
+            <h4>Maala <i class="material-icons">settings</i></h4>
+
+        </div>
+        <div class="col s3">
+            <div class="card-panel teal lighten-2">
+                <p>Quem tem gosto parecido com o meu?</p>
+            </div>
+            <table class=" highlight">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Idade</th>
+                    </tr>
+                </thead>
+
+                <tbody class="collection-item">
+                    <tr>
+                        <td><a class="modal-trigger" id="yyyyy" href="#modal1" data-nome="Robocop" data-lancamento="1990"
+                                data-toggle="modal" data-target="modal1">José</a></td>
+                        <td>77</td>
+                    </tr>
+                    <tr>
+                        <td>João da Silva Alcantara Machado</td>
+                        <td>32</td>
+                    </tr>
+                    <tr>
+                        <td>Ana Carla</td>
+                        <td>19</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="z-depth-5 col s6">
+            <div class="card-panel center-align teal lighten-2">
+                <p>Avalie</p>
+            </div>
+            <table class=" highlight">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Data</th>
+                        <th>Nota</th>
+                        <th>Excluir</th>
+                    </tr>
+                </thead>
+
+                <tbody class="collection-item">
+                    <tr>
+                        <td><a class="modal-trigger" id="yyyyy" href="#modal1" data-nome="Robocop" data-lancamento="1990"
+                                data-toggle="modal" data-target="modal1">Robocop</a></td>
+                        <td>1990</td>
+                        <td>6</td>
+                        <td><i class="material-icons">delete</i></td>
+                    </tr>
+                    <tr>
+                        <td>Aladin</td>
+                        <td>2019</td>
+                        <td>7</td>
+                        <td><i class="material-icons">delete</i></td>
+                    </tr>
+                    <tr>
+                        <td>Jonathan</td>
+                        <td>1988</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+        <div class="col s3">
+            <div class="card-panel teal lighten-2">
+                <p>Segue alguns filmes que possa gostar</p>
+            </div>
+            <table class=" highlight">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+
+                <tbody class="collection-item">
+                    <tr>
+                        <td><a class="modal-trigger" id="yyyyy" href="#modal1" data-nome="Robocop" data-lancamento="1990"
+                                data-toggle="modal" data-target="modal1">Robocop</a></td>
+                        <td>1990</td>
+                    </tr>
+                    <tr>
+                        <td>Aladin</td>
+                        <td>2019</td>
+                    </tr>
+                    <tr>
+                        <td>De Volta para o futuro III</td>
+                        <td>1988</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+
+    <!-- Modal Structure -->
+    <div id="modal1" class="modal">
+        <div class="modal-content">
+            <div class="row">
+                <div class="card-panel teal lighten-2">
+                    <h4>Avalie o filme: <strong id="nome"></strong></h4>
+                    <p>De <strong id="lancamento"></strong></p>
+                </div>
+                <div class="input-field col s12">
+                    <select class="browser-default">
+                        <option value="" disabled selected>Qual nota esse filme merece?</option>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+
+                <div class="input-field col s12">
+                    <textarea id="textarea2" class="materialize-textarea" data-length="4000"></textarea>
+                    <label for="textarea2">Diga o que achou do filme...</label>
+                </div>
+
+                <div class="col s12">
+                    <p>Quando assistiu?</p>
+                </div>
+                <div class="input-field teal lighten-5 col s6">
+                    <input name="dtIniAssistiu" id="dtIniAssistiu" type="date" class="datepicker" value="{{ dtIniAssistiu }}"
+                        required>
+                    <label for="dtIniAssistiu">Data que comecou</label>
+                </div>
+                <div class="input-field teal lighten-5 col s6">
+                    <input name="dtFimAssistiu" id="dtFimAssistiu" type="date" class="datepicker" value="{{ dtFimAssistiu }}"
+                        required>
+                    <label for="dtFimAssistiu">Data que terminou</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Gravar</a>
+        </div>
+    </div>
+
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- jQuery and Materialize JS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.min.js"></script>
+    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script-->
+    <script>
+        $(document).ready(function () {
+            $('.modal').modal({
+                ready: function (modal, trigger) {
+                    modal.find('#nome').text(trigger.data('nome'));
+                    modal.find('#lancamento').text(trigger.data('lancamento'));
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
