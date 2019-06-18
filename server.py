@@ -33,9 +33,10 @@ cipher = AES.new(key32, AES.MODE_ECB)
 def index():
    return render_template('home.html')
 
-@app.route('/filmes/<data>')
-def filmes(data):
+@app.route('/filmes')
+def filmes():
 
+   data = request.cookies.get('dd')
    decoded = cipher.decrypt(pybase64.urlsafe_b64decode(data))
    dado = decoded.strip().split(",")
 
@@ -44,10 +45,10 @@ def filmes(data):
    
 
    resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3] ))
-   resp.set_cookie('login', dado[0])
-   resp.set_cookie('name', dado[1])
-   resp.set_cookie('birthday', dado[2])
-   resp.set_cookie('email', dado[3])
+   # resp.set_cookie('login', dado[0])
+   # resp.set_cookie('name', dado[1])
+   # resp.set_cookie('birthday', dado[2])
+   # resp.set_cookie('email', dado[3])
    return resp
    # return 'welcome %s %s' %(dado[3], dado[1]) 
 
@@ -71,7 +72,9 @@ def updateuser(login):
       if (len(chunck)%16!=0):
          chunck+= ' ' * (16-len(chunck)%16)         
       encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
-      return redirect(url_for('filmes',data = encoded))
+      resp = make_response(redirect(url_for('filmes')))
+      resp.set_cookie('dd', encoded)
+      return resp
    else:
       return "Metodo invalido"
 
@@ -90,7 +93,9 @@ def login():
          if (len(chunck)%16!=0):
             chunck+= ' ' * (16-len(chunck)%16)         
          encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
-         return redirect(url_for('filmes',data = encoded))
+         resp = make_response(redirect(url_for('filmes')))
+         resp.set_cookie('dd', encoded)
+         return resp
       else:
          return render_template('filmes.html', erro = True, login = login)   
    else:
