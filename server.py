@@ -60,12 +60,20 @@ def updateuser(login):
       email = request.form['email']
 
       if updateuserNOK(login, name, birthday, email):      
-         return False
+         return "Erro ao atualizar"
 
       print("Atualizado com sucesso")
-      return True
+
+      chunck = login+","+name+","+tdata(birthday)+","+email
+
+      print(chunck)
+
+      if (len(chunck)%16!=0):
+         chunck+= ' ' * (16-len(chunck)%16)         
+      encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
+      return redirect(url_for('filmes',data = encoded))
    else:
-      return False
+      return "Metodo invalido"
 
 
 
@@ -168,7 +176,7 @@ def adduserNOK(login, name, birthday, email, cpassword):
       for ID_USUARIO in cursor:
          id=str(ID_USUARIO).replace("(","").replace(",)","")
          #insert no neo4j
-         payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:'"+id+"', login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+birthday+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
+         payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:'"+id+"', login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+tdata(birthday)+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
       response = requests.request("POST", url, data=payload, headers=headers)
       print(response.text)
 
@@ -191,12 +199,18 @@ def updateuserNOK(login, name, birthday, email):
 
    if ret == False:
       #update no neo4j
-      payload = "{\n  \"query\" : \"match (u:USUARIO{login_usuario:'teste123'}) WITH u, u {.*} as snapshot SET u.nome_usuario = '"+name+"' SET u.dt_nascimento_usuario = '"+birthday+"' SET u.e_mail_usuario = '"+email+"' RETURN snapshot\",\n  \"params\" : { }\n}\n"
+      payload = "{\n  \"query\" : \"match (u:USUARIO{login_usuario:'"+login+"'}) WITH u, u {.*} as snapshot SET u.nome_usuario = '"+name+"' SET u.dt_nascimento_usuario = '"+tdata(birthday)+"' SET u.e_mail_usuario = '"+email+"' RETURN snapshot\",\n  \"params\" : { }\n}\n"
       response = requests.request("POST", url, data=payload, headers=headers)
       print(response.text)
 
    mariadb_connection.close()
    return ret 
+
+def tdata(data):
+   dt = data.split("-")
+   datat = dt[2]+"/"+dt[1]+"/"+dt[0]
+   return datat
+
 
 if __name__ == '__main__':
    app.run(debug = True)

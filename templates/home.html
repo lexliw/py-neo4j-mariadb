@@ -31,11 +31,11 @@
 
             <form action="http://localhost:5000/login" method="post">
               <div class="input-field">
-                <input name="login" id="login" type="text" class="validate" value="{{ login }}">
+                <input name="login" id="login" type="text" class="validate" value="{{ login }}" required>
                 <label for="login">Login</label>
               </div>
               <div class="input-field">
-                <input name="password" id="password" type="password" class="validate">
+                <input name="password" id="password" type="password" class="validate" required>
                 <label for="password">Password</label>
               </div>
               <div>
