@@ -42,16 +42,9 @@ def filmes():
 
    dt = dado[2].split("/")
    niver = dt[2]+"-"+dt[1]+"-"+dt[0]
-   
 
    resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3] ))
-   # resp.set_cookie('login', dado[0])
-   # resp.set_cookie('name', dado[1])
-   # resp.set_cookie('birthday', dado[2])
-   # resp.set_cookie('email', dado[3])
    return resp
-   # return 'welcome %s %s' %(dado[3], dado[1]) 
-
 
 @app.route('/updateuser/<login>',methods = ['POST', 'GET'])
 def updateuser(login):
@@ -66,19 +59,11 @@ def updateuser(login):
       print("Atualizado com sucesso")
 
       chunck = login+","+name+","+tdata(birthday)+","+email
-
-      print(chunck)
-
-      if (len(chunck)%16!=0):
-         chunck+= ' ' * (16-len(chunck)%16)         
-      encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
       resp = make_response(redirect(url_for('filmes')))
-      resp.set_cookie('dd', encoded)
+      resp.set_cookie('dd', encondeDD(chunck))
       return resp
    else:
       return "Metodo invalido"
-
-
 
 @app.route('/login',methods = ['POST', 'GET'])
 def login():
@@ -90,11 +75,8 @@ def login():
 
       if len(dados) > 0:      
          chunck = dados
-         if (len(chunck)%16!=0):
-            chunck+= ' ' * (16-len(chunck)%16)         
-         encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
          resp = make_response(redirect(url_for('filmes')))
-         resp.set_cookie('dd', encoded)
+         resp.set_cookie('dd', encondeDD(chunck))
          return resp
       else:
          return render_template('filmes.html', erro = True, login = login)   
@@ -120,13 +102,12 @@ def adduser():
       if adduserNOK(login, name, birthday, email, cpassword):
          return render_template('home.html', erroadd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
-      # resp = make_response(render_template('filmes.html'))
-      # resp.set_cookie('login', login)
-      # resp.set_cookie('name', name)
-      # resp.set_cookie('birthday', birthday)
-      # resp.set_cookie('email', email)
+      chunck = login+","+name+","+tdata(birthday)+","+email
+      resp = make_response(redirect(url_for('filmes')))
+      resp.set_cookie('dd', encondeDD(chunck))
+      return resp
 
-      return redirect(url_for('filmes',login = login, name = name, birthday = birthday,email = email ))
+      # return redirect(url_for('filmes',login = login, name = name, birthday = birthday,email = email ))
    else:
       return render_template('home.html')
 
@@ -216,6 +197,11 @@ def tdata(data):
    datat = dt[2]+"/"+dt[1]+"/"+dt[0]
    return datat
 
+def encondeDD(chunck):
+   if (len(chunck)%16!=0):
+      chunck+= ' ' * (16-len(chunck)%16)         
+   encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
+   return encoded
 
 if __name__ == '__main__':
    app.run(debug = True)
