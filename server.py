@@ -3,6 +3,7 @@
 
 from flask import Flask, render_template, redirect, url_for, request, make_response
 import mysql.connector as mariadb
+import json
 import requests
 import datetime
 from Crypto.Cipher import AES
@@ -39,11 +40,15 @@ def filmes():
    data = request.cookies.get('dd')
    decoded = cipher.decrypt(pybase64.urlsafe_b64decode(data))
    dado = decoded.strip().split(",")
-
    dt = dado[2].split("/")
    niver = dt[2]+"-"+dt[1]+"-"+dt[0]
+   
+   idUser = dado[4]
+   nmMovie = ""
+   yyMovie = ""
+   movies = listMovies(idUser, nmMovie, yyMovie)
 
-   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3] ))
+   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3], movies = movies ))
    return resp
 
 @app.route('/updateuser/<login>',methods = ['POST', 'GET'])
@@ -95,19 +100,17 @@ def adduser():
 
       if login_invalido(login):
          return render_template('home.html', errologin = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
-
       if cpassword <> ccpassword:
          return render_template('home.html', erropasswd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
-      if adduserNOK(login, name, birthday, email, cpassword):
+      idUser = adduserDB(login, name, birthday, email, cpassword)
+      if len(idUser) == 0:
          return render_template('home.html', erroadd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
-      chunck = login+","+name+","+tdata(birthday)+","+email
+      chunck = login+","+name+","+tdata(birthday)+","+email+","+idUser
       resp = make_response(redirect(url_for('filmes')))
       resp.set_cookie('dd', encondeDD(chunck))
       return resp
-
-      # return redirect(url_for('filmes',login = login, name = name, birthday = birthday,email = email ))
    else:
       return render_template('home.html')
 
@@ -119,10 +122,10 @@ def validasenha(login, password):
    cursor = mariadb_connection.cursor()
    ret = ""
 
-   cursor.execute("SELECT LOGIN_USUARIO,NOME_USUARIO,DT_NASCIMENTO_USUARIO,E_MAIL_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s AND SENHA_USUARIO=%s", (login, password))
+   cursor.execute("SELECT LOGIN_USUARIO,NOME_USUARIO,DT_NASCIMENTO_USUARIO,E_MAIL_USUARIO,ID_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s AND SENHA_USUARIO=%s", (login, password))
    
-   for LOGIN_USUARIO, NOME_USUARIO, DT_NASCIMENTO_USUARIO, E_MAIL_USUARIO in cursor:
-      ret = LOGIN_USUARIO+","+NOME_USUARIO+","+DT_NASCIMENTO_USUARIO.strftime('%m/%d/%Y')+","+E_MAIL_USUARIO
+   for LOGIN_USUARIO, NOME_USUARIO, DT_NASCIMENTO_USUARIO, E_MAIL_USUARIO, ID_USUARIO in cursor:
+      ret = LOGIN_USUARIO+","+NOME_USUARIO+","+DT_NASCIMENTO_USUARIO.strftime('%m/%d/%Y')+","+E_MAIL_USUARIO+","+intToStr(ID_USUARIO)
       print("senha ok")      
     
    mariadb_connection.close()
@@ -132,7 +135,7 @@ def login_invalido(login):
    mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
    cursor = mariadb_connection.cursor()
    
-   cursor.execute("SELECT 1 FROM USUARIO WHERE LOGIN_USUARIO=%s", (login,))
+   cursor.execute("SELECT 1 FROM USUARIO WHERE LOGIN_USUARIO=%s", (login))
    if cursor.fetchone():
       print(login + " ja existe")
       ret = True
@@ -143,28 +146,27 @@ def login_invalido(login):
    mariadb_connection.close()
    return ret 
 
-def adduserNOK(login, name, birthday, email, cpassword):
+def adduserDB(login, name, birthday, email, cpassword):
    mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
    cursor = mariadb_connection.cursor()
-   ret = False
+   ret = ''
    #insert na mariadb
    try:
       cursor.execute("INSERT INTO USUARIO (LOGIN_USUARIO,NOME_USUARIO,DT_NASCIMENTO_USUARIO,E_MAIL_USUARIO,SENHA_INI,SENHA_USUARIO,PUBLICAR) VALUES (%s,%s,%s,%s,%s,%s,%s)", (login, name, birthday, email, 'S',cpassword,'S'))
    except mariadb.Error as error:
       print("Error: {}".format(error))
-      ret = True
 
    mariadb_connection.commit()
    print "The last inserted id was: ", cursor.lastrowid   
 
-   if ret == False:
-      cursor.execute("SELECT ID_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s", (login,))
-      for ID_USUARIO in cursor:
-         id=str(ID_USUARIO).replace("(","").replace(",)","")
-         #insert no neo4j
-         payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:'"+id+"', login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+tdata(birthday)+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
-      response = requests.request("POST", url, data=payload, headers=headers)
-      print(response.text)
+   cursor.execute("SELECT ID_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s", (login,))
+   for ID_USUARIO in cursor:
+      idUser= intToStr(ID_USUARIO)
+      ret = idUser
+      #insert no neo4j
+      payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:'"+idUser+"', login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+tdata(birthday)+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
+   response = requests.request("POST", url, data=payload, headers=headers)
+   print(response.text)
 
    mariadb_connection.close()
    return ret 
@@ -192,6 +194,31 @@ def updateuserNOK(login, name, birthday, email):
    mariadb_connection.close()
    return ret 
 
+def listMovies(idUser, nmMovie, yyMovie):
+   mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
+   cursor = mariadb_connection.cursor()
+   ret = "["
+   query="SELECT F.ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA FROM FILME_SERIE F LEFT JOIN ( SELECT * FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s ) AS U ON F.ID_FILME = U.ID_FILME WHERE F.NOME_FILME LIKE '%%%s%%' AND ANO_LANC_FILME LIKE '%%%s%%' ORDER BY F.NOME_FILME" % (idUser, nmMovie, yyMovie)
+
+   cursor.execute(query)
+   for ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA in cursor:
+      if ret <> "[":
+         ret += "," 
+
+      notaa = intToStr(NOTA)
+      delete = "delete"
+      if NOTA is None:
+         notaa = ""  
+         delete = ""
+      ret += "{\"idFilme\":\""+intToStr(ID_FILME)+"\",\"nome\":\""+NOME_FILME+"\",\"ano\":\""+intToStr(ANO_LANC_FILME)+"\",\"nota\":\""+notaa+"\",\"delete\":\""+delete+"\"}"
+   
+   ret += "]"
+   #print(ret)    
+   mariadb_connection.close()
+   return json.loads(ret) 
+
+## AUX ###############################################################
+
 def tdata(data):
    dt = data.split("-")
    datat = dt[2]+"/"+dt[1]+"/"+dt[0]
@@ -202,6 +229,9 @@ def encondeDD(chunck):
       chunck+= ' ' * (16-len(chunck)%16)         
    encoded = pybase64.urlsafe_b64encode(cipher.encrypt(chunck))
    return encoded
+
+def intToStr(intDB):
+   return str(intDB).replace("(","").replace(",)","")
 
 if __name__ == '__main__':
    app.run(debug = True)

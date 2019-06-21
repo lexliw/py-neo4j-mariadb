@@ -66,25 +66,15 @@
                 </thead>
 
                 <tbody class="collection-item">
-                    <tr>
-                        <td><a class="modal-trigger" id="yyyyy" href="#modal1" data-nome="Robocop" data-lancamento="1990"
-                                data-toggle="modal" data-target="modal1">Robocop</a></td>
-                        <td>1990</td>
-                        <td>6</td>
-                        <td><i class="material-icons">delete</i></td>
-                    </tr>
-                    <tr>
-                        <td>Aladin</td>
-                        <td>2019</td>
-                        <td>7</td>
-                        <td><i class="material-icons">delete</i></td>
-                    </tr>
-                    <tr>
-                        <td>Jonathan</td>
-                        <td>1988</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
+                    {% for movie in movies %}
+                        <tr>
+                            <td><a class="modal-trigger" id="yyyyy" href="#modal1" data-id="{{ movie.idFilme }}" data-nome="{{ movie.nome }}" data-lancamento="{{ movie.ano }}"
+                                    data-toggle="modal" data-target="modal1">{{ movie.nome }}</a></td>
+                            <td>{{ movie.ano }}</td>
+                            <td>{{ movie.nota }}</td>
+                            <td><i class="material-icons">{{ movie.delete }}</i></td>
+                        </tr>
+                    {% endfor %}                    
                 </tbody>
             </table>
 
