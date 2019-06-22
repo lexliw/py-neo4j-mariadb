@@ -218,7 +218,7 @@ def login_invalido(login):
    mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
    cursor = mariadb_connection.cursor()
    
-   cursor.execute("SELECT 1 FROM USUARIO WHERE LOGIN_USUARIO=%s", (login))
+   cursor.execute("SELECT 1 FROM USUARIO WHERE LOGIN_USUARIO=%s", (login,))
    if cursor.fetchone():
       print(login + " ja existe")
       ret = True
@@ -247,7 +247,7 @@ def adduserDB(login, name, birthday, email, cpassword):
       idUser= intToStr(ID_USUARIO)
       ret = idUser
       #insert no neo4j
-      payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:'"+idUser+"', login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+tdata(birthday)+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
+      payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:"+idUser+", login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+tdata(birthday)+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
    response = requests.request("POST", url, data=payload, headers=headers)
    print(response.text)
 
