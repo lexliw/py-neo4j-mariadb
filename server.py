@@ -42,15 +42,29 @@ def filmes():
    niver = dt[2]+"-"+dt[1]+"-"+dt[0]
    
    idUser = dado[4]
-   nmMovie = ""
-   yyMovie = ""
+   nmMovie = dado[5]
+   yearMovie = dado[6]
    skip = "0"
-   movies = listMovies(idUser, nmMovie, yyMovie, skip)
+   movies = listMovies(idUser, nmMovie, yearMovie, skip)
    recomMovies = recommendMovie(idUser)
    recomPeoples = recommendPeople(idUser)
 
-   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3], movies = movies, recomMovies = recomMovies, recomPeoples = recomPeoples ))
+   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3], movies = movies, recomMovies = recomMovies, recomPeoples = recomPeoples, nmMovie = nmMovie, yearMovie = yearMovie))
    return resp
+
+@app.route('/filtro',methods = ['POST'])
+def filtro():
+
+   dado = getCookies()
+
+   nmMovie = request.form['nmMovie']
+   yearMovie = request.form['yearMovie']
+
+   chunck = dado[0]+","+dado[1]+","+dado[2]+","+dado[3]+","+dado[4]+","+nmMovie+","+yearMovie
+   resp = make_response(redirect(url_for('filmes')))
+   resp.set_cookie('dd', encondeDD(chunck))
+   return resp
+
 
 @app.route('/updateuser/<login>',methods = ['POST', 'GET'])
 def updateuser(login):
@@ -65,12 +79,41 @@ def updateuser(login):
 
       print("Atualizado com sucesso")
 
-      chunck = login+","+name+","+tdata(birthday)+","+email+","+dado[4]
+      chunck = login+","+name+","+tdata(birthday)+","+email+","+dado[4]+","+","
       resp = make_response(redirect(url_for('filmes')))
       resp.set_cookie('dd', encondeDD(chunck))
       return resp
    else:
       return "Metodo invalido"
+
+@app.route('/updatepass',methods = ['POST', 'GET'])
+def updatepass():
+   if request.method == 'POST':
+      dado = getCookies()
+      login = dado[0]
+      password = request.form['password']
+      cpassword = request.form['cpassword']
+      ccpassword = request.form['ccpassword']
+
+      dados = validasenha(login, password)
+
+      if len(dados) == 0:      
+         return "senha invalida"
+
+      if cpassword <> ccpassword:      
+         return "senha nova nao confere"
+
+      #metodo atualizar senha
+      if updatepassDbNOK(login, cpassword):
+         return "falha na atualizacao da senha"
+
+      print("Senha atualizada com sucesso! %s %s %s %s" % (login, password, cpassword, ccpassword))
+      resp = make_response(redirect(url_for('filmes')))
+      return resp
+   else:
+      return "Metodo invalido"
+
+
 
 @app.route('/movie-avaliation',methods = ['POST', 'GET'])
 def movieAvaliation():
@@ -119,7 +162,7 @@ def login():
       dados = validasenha(login, password)
 
       if len(dados) > 0:      
-         chunck = dados
+         chunck = dados+","+","
          resp = make_response(redirect(url_for('filmes')))
          resp.set_cookie('dd', encondeDD(chunck))
          return resp
@@ -147,7 +190,7 @@ def adduser():
       if len(idUser) == 0:
          return render_template('home.html', erroadd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
-      chunck = login+","+name+","+tdata(birthday)+","+email+","+idUser
+      chunck = login+","+name+","+tdata(birthday)+","+email+","+idUser+","+","
       resp = make_response(redirect(url_for('filmes')))
       resp.set_cookie('dd', encondeDD(chunck))
       return resp
@@ -234,11 +277,27 @@ def updateuserNOK(login, name, birthday, email):
    mariadb_connection.close()
    return ret 
 
+def updatepassDbNOK(login, cpassword):
+   mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
+   cursor = mariadb_connection.cursor()
+   ret = False
+   #update na mariadb
+   try:
+      cursor.execute("UPDATE USUARIO SET SENHA_USUARIO = %s WHERE LOGIN_USUARIO = %s", (cpassword, login))
+   except mariadb.Error as error:
+      print("Error: {}".format(error))
+      ret = True
+
+   mariadb_connection.commit()
+   mariadb_connection.close()
+   return ret
+
 def listMovies(idUser, nmMovie, yyMovie, skip):
    mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
    cursor = mariadb_connection.cursor()
+
    ret = "["
-   query="SELECT F.ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA FROM FILME_SERIE F LEFT JOIN ( SELECT * FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s ) AS U ON F.ID_FILME = U.ID_FILME WHERE F.NOME_FILME LIKE '%%%s%%' AND ANO_LANC_FILME LIKE '%%%s%%' ORDER BY F.NOME_FILME" % (idUser, nmMovie, yyMovie)
+   query="SELECT F.ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA FROM FILME_SERIE F LEFT JOIN ( SELECT * FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s) AS U ON F.ID_FILME = U.ID_FILME WHERE F.NOME_FILME LIKE '%%%s%%' AND ANO_LANC_FILME LIKE '%%%s%%'  ORDER BY F.NOME_FILME" % (idUser, nmMovie, yyMovie)
    #query="SELECT F.ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA FROM FILME_SERIE F LEFT JOIN ( SELECT * FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s ) AS U ON F.ID_FILME = U.ID_FILME WHERE F.NOME_FILME LIKE '%%%s%%' AND ANO_LANC_FILME LIKE '%%%s%%' ORDER BY F.NOME_FILME LIMIT %s, 10" % (idUser, nmMovie, yyMovie, skip)
 
    cursor.execute(query)
