@@ -41,7 +41,6 @@
                         <td>{{ people.nome }}</td>
                         <td>{{ people.idade }}</td>
                         <td>{{ people.rank }}</td>
-
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -76,7 +75,7 @@
                         <td>
                             {% if movie.delete %}
                             <form action="http://localhost:5000/del-movie-avaliation/{{ movie.idFilme }}" method="post">
-                                <button class="waves-effect waves-green red btn" type="submit" name="action">
+                                <button class="waves-effect waves-purple red btn" type="submit" name="action">
                                     <i class="material-icons">{{ movie.delete }}</i>
                                 </button>
                             </form>
@@ -159,7 +158,7 @@
 
     <!-- Modal Atu -->
     <div id="modalSenha" class="modal">
-        <form action="http://localhost:5000/adduser" method="post">
+        <form action="http://localhost:5000/update-pass" method="post">
             <div class="modal-content">
                 <div class="row">
                     <div class="card-panel teal lighten-2">
@@ -240,29 +239,44 @@
         </form>
     </div>
 
+    <!-- Modal email -->
+    <div id="modalEmail" class="modal">
+        <div class="modal-content">
+            <div class="row">
+                <div class="card-panel teal lighten-2">
+                    <h4 id="emailpeople"></h4>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-action modal-close waves-effect waves-green btn-flat">Fechar</button>
+            </div>
+        </div>
+    </div>
 
-    <!-- Compiled and minified CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <!-- jQuery and Materialize JS -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.min.js"></script>
-    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script-->
-    <script>
-        $(document).ready(function () {
-            $('.modal').modal({
-                ready: function (modal, trigger) {
-                    var now = new Date();
-                    var today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
-                    modal.find('#nome').text(trigger.data('nome'));
-                    modal.find('#lancamento').text(trigger.data('lancamento'));
-                    modal.find('#idFilme').val(trigger.data('id'));
-                    modal.find('#dtIniAssistiu').val(today);
-                    modal.find('#dtFimAssistiu').val(today);
-                }
+
+        <!-- Compiled and minified CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <!-- jQuery and Materialize JS -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.min.js"></script>
+        <!--script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script-->
+        <script>
+            $(document).ready(function () {
+                $('.modal').modal({
+                    ready: function (modal, trigger) {
+                        var now = new Date();
+                        var today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+                        modal.find('#nome').text(trigger.data('nome'));
+                        modal.find('#lancamento').text(trigger.data('lancamento'));
+                        modal.find('#emailpeople').text(trigger.data('emailpeople'));
+                        modal.find('#idFilme').val(trigger.data('id'));
+                        modal.find('#dtIniAssistiu').val(today);
+                        modal.find('#dtFimAssistiu').val(today);
+                    }
+                });
             });
-        });
-    </script>
+        </script>
 
 </body>
 
