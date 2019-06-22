@@ -37,16 +37,15 @@ def index():
 @app.route('/filmes')
 def filmes():
 
-   data = request.cookies.get('dd')
-   decoded = cipher.decrypt(pybase64.urlsafe_b64decode(data))
-   dado = decoded.strip().split(",")
+   dado = getCookies()
    dt = dado[2].split("/")
    niver = dt[2]+"-"+dt[1]+"-"+dt[0]
    
    idUser = dado[4]
    nmMovie = ""
    yyMovie = ""
-   movies = listMovies(idUser, nmMovie, yyMovie)
+   skip = "0"
+   movies = listMovies(idUser, nmMovie, yyMovie, skip)
 
    resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3], movies = movies ))
    return resp
@@ -54,6 +53,7 @@ def filmes():
 @app.route('/updateuser/<login>',methods = ['POST', 'GET'])
 def updateuser(login):
    if request.method == 'POST':
+      dado = getCookies()
       name = request.form['name']
       birthday = request.form['birthday']
       email = request.form['email']
@@ -63,12 +63,50 @@ def updateuser(login):
 
       print("Atualizado com sucesso")
 
-      chunck = login+","+name+","+tdata(birthday)+","+email
+      chunck = login+","+name+","+tdata(birthday)+","+email+","+dado[4]
       resp = make_response(redirect(url_for('filmes')))
       resp.set_cookie('dd', encondeDD(chunck))
       return resp
    else:
       return "Metodo invalido"
+
+@app.route('/movie-avaliation',methods = ['POST', 'GET'])
+def movieAvaliation():
+   if request.method == 'POST':
+      dado = getCookies()
+      idUser = dado[4]
+      idFilme = request.form['idFilme']
+      nota = request.form['nota']
+      resenha = request.form['resenha']
+      dtIniAssistiu = request.form['dtIniAssistiu']
+      dtFimAssistiu = request.form['dtFimAssistiu']
+
+      print("entrada! %s - %s - %s - %s - %s - %s" % (idUser, idFilme, resenha, dtIniAssistiu, dtFimAssistiu, nota))
+
+      if updateMovieAvalDB(idUser, idFilme, dtIniAssistiu, dtFimAssistiu, resenha, nota):      
+         print("Filme Avaliado com sucesso! %s - %s - %s - %s - %s" % (nota, idFilme, resenha, dtIniAssistiu, dtFimAssistiu))
+
+      resp = make_response(redirect(url_for('filmes')))
+      return resp
+   else:
+      return "Metodo invalido"
+
+@app.route('/del-movie-avaliation/<idFilme>',methods = ['POST', 'GET'])
+def delMovieAvaliation(idFilme):
+   if request.method == 'POST':
+      dado = getCookies()
+      idUser = dado[4]
+
+      print("DELETAR: U %s - F %s " % (idUser, idFilme))
+
+      if delMovieAvaliationDB(idUser, idFilme):      
+         print("Avaliacao deletada com sucesso! %s - %s" % (idUser, idFilme))
+
+      resp = make_response(redirect(url_for('filmes')))
+      return resp
+   else:
+      return "Metodo invalido"
+
 
 @app.route('/login',methods = ['POST', 'GET'])
 def login():
@@ -194,11 +232,12 @@ def updateuserNOK(login, name, birthday, email):
    mariadb_connection.close()
    return ret 
 
-def listMovies(idUser, nmMovie, yyMovie):
+def listMovies(idUser, nmMovie, yyMovie, skip):
    mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
    cursor = mariadb_connection.cursor()
    ret = "["
    query="SELECT F.ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA FROM FILME_SERIE F LEFT JOIN ( SELECT * FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s ) AS U ON F.ID_FILME = U.ID_FILME WHERE F.NOME_FILME LIKE '%%%s%%' AND ANO_LANC_FILME LIKE '%%%s%%' ORDER BY F.NOME_FILME" % (idUser, nmMovie, yyMovie)
+   #query="SELECT F.ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA FROM FILME_SERIE F LEFT JOIN ( SELECT * FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s ) AS U ON F.ID_FILME = U.ID_FILME WHERE F.NOME_FILME LIKE '%%%s%%' AND ANO_LANC_FILME LIKE '%%%s%%' ORDER BY F.NOME_FILME LIMIT %s, 10" % (idUser, nmMovie, yyMovie, skip)
 
    cursor.execute(query)
    for ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA in cursor:
@@ -217,6 +256,51 @@ def listMovies(idUser, nmMovie, yyMovie):
    mariadb_connection.close()
    return json.loads(ret) 
 
+def updateMovieAvalDB(idUser, idFilme, dtIniAssistiu, dtFimAssistiu, resenha, nota):      
+   mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
+   cursor = mariadb_connection.cursor()
+   ret = True
+   #insert na mariadb
+   try:
+      cursor.execute("INSERT INTO USUARIO_ASSISTIU (ID_USUARIO,ID_FILME,DT_INI_ASSISTIDO,DT_FIM_ASSISTIDO,RESENHA,NOTA)VALUES(%s,%s,%s,%s,%s,%s)", (idUser, idFilme, dtIniAssistiu, dtFimAssistiu, resenha, nota))
+   except mariadb.Error as error:
+      print("Error: {}".format(error))
+      ret = False
+
+   mariadb_connection.commit()
+   print "The last inserted id was: ", cursor.lastrowid   
+
+   #Inclui relacionamento no neo4j
+   payload = "{\n  \"query\" : \"match (usr:USUARIO {id_usuario:%s}),(filme:FILMES_SERIES {id_filme:%s}) merge (usr)-[:ASSISTIU {dt_ini_assistido:'%s', dt_fim_assistido:'%s', resenha:'%s', nota:%s}]->(filme)\",\n  \"params\" : { }\n}\n"  % (idUser, idFilme, tdata(dtIniAssistiu), tdata(dtFimAssistiu), resenha, nota)
+   response = requests.request("POST", url, data=payload, headers=headers)
+   print(response.text)
+
+   mariadb_connection.close()
+   return ret 
+
+def delMovieAvaliationDB(idUser, idFilme):      
+   mariadb_connection = mariadb.connect(host=dbhost, port=dbport, user=dbuser, password=dbpwd, database=dbdata)
+   cursor = mariadb_connection.cursor()
+   ret = True
+   #eclui na mariadb
+   try:
+      cursor.execute("DELETE FROM USUARIO_ASSISTIU WHERE ID_USUARIO = %s AND ID_FILME =%s", (idUser, idFilme))
+   except mariadb.Error as error:
+      print("Error: {}".format(error))
+      ret = False
+
+   mariadb_connection.commit()
+   print "The last inserted id was: ", cursor.lastrowid   
+
+   #exclui relacionamento no neo4j
+   payload = "{\n  \"query\" : \"match (usr1:USUARIO {id_usuario:%s})-[r:ASSISTIU]->(filme1:FILMES_SERIES {id_filme:%s}) delete r\",\n  \"params\" : { }\n}\n" % (idUser, idFilme)
+   response = requests.request("POST", url, data=payload, headers=headers)
+   print(response.text)
+
+   mariadb_connection.close()
+   return ret 
+
+
 ## AUX ###############################################################
 
 def tdata(data):
@@ -232,6 +316,12 @@ def encondeDD(chunck):
 
 def intToStr(intDB):
    return str(intDB).replace("(","").replace(",)","")
+
+def getCookies():
+   data = request.cookies.get('dd')
+   decoded = cipher.decrypt(pybase64.urlsafe_b64decode(data))
+   return decoded.strip().split(",")
+
 
 if __name__ == '__main__':
    app.run(debug = True)
