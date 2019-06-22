@@ -13,7 +13,15 @@ docker pull mariadb
 https://hub.docker.com/_/adminer
 docker pull adminer
 ```
-Acessar http://locahost:8080 e dar cargar na **mariadb** com o arquivo ./asset/Scripts_relacional.sql
+executar na pasta */py-neo4j-mariadb/asset* o comando:
+
+```
+docker-compose up -d
+
+Ele irá subir as imagens dos bancos de dados e dar carga na mariaDB.
+```
+
+Acessar http://locahost:8080 interface do banco **mariadb** usuario *root* senha *example*
 
 Acessar http://localhost:7474 e dar carga no **neo4j**. Os arquivos .csv da pasta ./asset precisam estar na pasta ***import*** do container.
 
