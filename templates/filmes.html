@@ -31,23 +31,19 @@
                     <tr>
                         <th>Nome</th>
                         <th>Idade</th>
+                        <th>rank</th>
                     </tr>
                 </thead>
 
                 <tbody class="collection-item">
+                    {% for people in recomPeoples %}
                     <tr>
-                        <td><a class="modal-trigger" href="#modal1" data-nome="Robocop" data-lancamento="1990"
-                                data-toggle="modal" data-target="modal1">José</a></td>
-                        <td>77</td>
+                        <td>{{ people.nome }}</td>
+                        <td>{{ people.idade }}</td>
+                        <td>{{ people.rank }}</td>
+
                     </tr>
-                    <tr>
-                        <td>João da Silva Alcantara Machado</td>
-                        <td>32</td>
-                    </tr>
-                    <tr>
-                        <td>Ana Carla</td>
-                        <td>19</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
@@ -105,19 +101,12 @@
                 </thead>
 
                 <tbody class="collection-item">
+                    {% for movie in recomMovies %}
                     <tr>
-                        <td><a class="modal-trigger" id="yyyyy" href="#modal1" data-nome="Robocop" data-lancamento="1990"
-                                data-toggle="modal" data-target="modal1">Robocop</a></td>
-                        <td>1990</td>
+                        <td>{{ movie.nmFilme }}</td>
+                        <td>{{ movie.dtFilme }}</td>
                     </tr>
-                    <tr>
-                        <td>Aladin</td>
-                        <td>2019</td>
-                    </tr>
-                    <tr>
-                        <td>De Volta para o futuro III</td>
-                        <td>1988</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>

@@ -46,8 +46,10 @@ def filmes():
    yyMovie = ""
    skip = "0"
    movies = listMovies(idUser, nmMovie, yyMovie, skip)
+   recomMovies = recommendMovie(idUser)
+   recomPeoples = recommendPeople(idUser)
 
-   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3], movies = movies ))
+   resp = make_response(render_template('filmes.html',clogin = dado[0], name = dado[1], birthday = niver, email = dado[3], movies = movies, recomMovies = recomMovies, recomPeoples = recomPeoples ))
    return resp
 
 @app.route('/updateuser/<login>',methods = ['POST', 'GET'])
@@ -299,6 +301,37 @@ def delMovieAvaliationDB(idUser, idFilme):
 
    mariadb_connection.close()
    return ret 
+
+def recommendMovie(idUser):
+   payload = "{\n  \"query\" : \"match (filmedest:FILMES_SERIES)<-[:ASSISTIU]-(usrdest:USUARIO)-[:ASSISTIU]->(filmeori:FILMES_SERIES)<-[:ASSISTIU]-(usr:USUARIO) where usr.id_usuario = %s and not exists ((usr:USUARIO)-[:ASSISTIU]->(filmedest:FILMES_SERIES)) return distinct filmedest\",\n  \"params\" : { }\n}\n" % (idUser)
+
+   response = requests.request("POST", url, data=payload, headers=headers)
+   data = response.json() 
+   ret = "["
+
+   for x in data['data']:
+      for y in x:
+         if ret <> "[":
+            ret += ","
+         ret += "{\"nmFilme\":\"%s\", \"dtFilme\":\"%s\"}" % (y['data']['nome_filme'],y['data']['ano_lanc_filme'])
+
+   ret += "]"
+   return json.loads(ret) 
+
+def recommendPeople(idUser):
+   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'/') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[0], month: parts[1], year: parts[2]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
+
+   response = requests.request("POST", url, data=payload, headers=headers)
+   data = response.json() 
+   ret = "["
+
+   for x in data['data']:
+      if ret <> "[":
+         ret += ","
+      ret += "{\"nome\":\"%s\",\"email\":\"%s\",\"idade\":\"%s\",\"rank\":\"%s\"}" % (x[0],x[1],str(x[2]),str(x[3]))
+
+   ret += "]"
+   return json.loads(ret) 
 
 
 ## AUX ###############################################################

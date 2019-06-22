@@ -14,4 +14,4 @@ data = response.json()
 
 for x in data['data']:
     for y in x:
-        print(y['data']['nome_filme'])
+        print(y['data']['nome_filme']+" ano: "+ y['data']['ano_lanc_filme'])
