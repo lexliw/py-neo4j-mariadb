@@ -38,9 +38,10 @@ def index():
 def filmes():
 
    dado = getCookies()
-   dt = dado[2].split("/")
-   niver = dt[2]+"-"+dt[1]+"-"+dt[0]
-   
+   #dt = dado[2].split("/")
+   #niver = dt[2]+"-"+dt[1]+"-"+dt[0]
+   niver = dado[2]
+
    idUser = dado[4]
    nmMovie = dado[5]
    yearMovie = dado[6]
@@ -378,7 +379,7 @@ def recommendMovie(idUser):
    return json.loads(ret) 
 
 def recommendPeople(idUser):
-   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'/') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[0], month: parts[1], year: parts[2]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
+   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'-') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[2], month: parts[1], year: parts[0]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
 
    response = requests.request("POST", url, data=payload, headers=headers)
    data = response.json() 
@@ -396,9 +397,9 @@ def recommendPeople(idUser):
 ## AUX ###############################################################
 
 def tdata(data):
-   dt = data.split("-")
-   datat = dt[2]+"/"+dt[1]+"/"+dt[0]
-   return datat
+   #dt = data.split("-")
+   #datat = dt[2]+"/"+dt[1]+"/"+dt[0]
+   return data
 
 def encondeDD(chunck):
    if (len(chunck)%16!=0):
