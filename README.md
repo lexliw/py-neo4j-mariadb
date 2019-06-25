@@ -2,16 +2,11 @@
 
 ## Pre requisitos:
 ```
--Instalar os bd
-
-https://hub.docker.com/_/neo4j
-docker pull neo4j
-
-https://hub.docker.com/_/mariadb
-docker pull mariadb
-
-https://hub.docker.com/_/adminer
-docker pull adminer
+Instalar:
+-docker
+-docker-compose
+-python 2.7
+-python-pip
 ```
 executar na pasta */py-neo4j-mariadb/asset* o comando:
 
@@ -20,6 +15,15 @@ docker-compose up -d
 
 Ele irá subir as imagens dos bancos de dados e dar carga na mariaDB.
 ```
+
+executar na pasta */py-neo4j-mariadb/* o comando:
+
+```
+python server.py
+
+Ele irá subir a aplicação.
+```
+Acessar http://locahost:5000 para aplicação
 
 Acessar http://locahost:8080 interface do banco **mariadb** usuario *root* senha *example*
 
