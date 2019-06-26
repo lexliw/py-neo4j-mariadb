@@ -1,6 +1,6 @@
-FROM python:2.7.16-alpine
+FROM python:stretch
 COPY . /app
 WORKDIR /app
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 EXPOSE 5000
-CMD python ./server.py
+CMD python3 ./server.py

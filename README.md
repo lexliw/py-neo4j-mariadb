@@ -13,10 +13,10 @@ Esta aplicação é uma POC do Neo4j. Se trata de um sistema de recomendação s
 Instalar:
 - [x] docker
 - [x] docker-compose
-- [x] python 2.7
-- [x] python-pip
+- [x] python 3
+- [x] python-pip3
 
-executar na pasta */py-neo4j-mariadb/asset* o comando:
+executar na pasta */py-neo4j-mariadb/* o comando:
 
 ```
 docker-compose up -d
@@ -33,6 +33,14 @@ python3 server.py
 
 Ele irá subir a aplicação.
 ```
+
+Alternativa (em teste):
+```
+docker build --tag blockbuster-friends .
+docker run --name python-app -p 5000:5000 blockbuster-friends
+```
+
+
 Acessar http://locahost:5000 para aplicação
 
 Acessar http://locahost:8080 interface do banco **mariadb** usuario *root* senha *example*
