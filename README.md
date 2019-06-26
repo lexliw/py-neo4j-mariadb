@@ -27,9 +27,9 @@ Ele irá subir as imagens dos bancos de dados e dar carga na mariaDB.
 executar na pasta */py-neo4j-mariadb/* o comando:
 
 ```
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
-python server.py
+python3 server.py
 
 Ele irá subir a aplicação.
 ```

@@ -376,7 +376,7 @@ def recommendMovie(idUser):
    return json.loads(ret) 
 
 def recommendPeople(idUser):
-   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'/') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[0], month: parts[1], year: parts[2]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
+   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'-') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[2], month: parts[1], year: parts[0]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
 
    response = requests.request("POST", url, data=payload, headers=headers)
    data = response.json() 
