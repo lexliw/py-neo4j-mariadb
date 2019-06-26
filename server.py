@@ -38,10 +38,7 @@ def index():
 def filmes():
 
    dado = getCookies()
-   #dt = dado[2].split("/")
-   #niver = dt[2]+"-"+dt[1]+"-"+dt[0]
    niver = dado[2]
-
    idUser = dado[4]
    nmMovie = dado[5]
    yearMovie = dado[6]
@@ -80,7 +77,7 @@ def updateuser(login):
 
       print("Atualizado com sucesso")
 
-      chunck = login+","+name+","+tdata(birthday)+","+email+","+dado[4]+","+","
+      chunck = "%s,%s,%s,%s,%s,," % (login,name,birthday,email,dado[4])
       resp = make_response(redirect(url_for('filmes')))
       resp.set_cookie('dd', encondeDD(chunck))
       return resp
@@ -101,7 +98,7 @@ def updatepass():
       if len(dados) == 0:      
          return "senha invalida"
 
-      if cpassword <> ccpassword:      
+      if cpassword != ccpassword:      
          return "senha nova nao confere"
 
       #metodo atualizar senha
@@ -163,7 +160,7 @@ def login():
       dados = validasenha(login, password)
 
       if len(dados) > 0:      
-         chunck = dados+","+","
+         chunck = "%s,," % (dados)
          resp = make_response(redirect(url_for('filmes')))
          resp.set_cookie('dd', encondeDD(chunck))
          return resp
@@ -184,14 +181,14 @@ def adduser():
 
       if login_invalido(login):
          return render_template('home.html', errologin = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
-      if cpassword <> ccpassword:
+      if cpassword != ccpassword:
          return render_template('home.html', erropasswd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
       idUser = adduserDB(login, name, birthday, email, cpassword)
       if len(idUser) == 0:
          return render_template('home.html', erroadd = True, clogin = login, name=name, birthday=birthday, email=email, cpassword=cpassword, ccpassword=ccpassword)
 
-      chunck = login+","+name+","+tdata(birthday)+","+email+","+idUser+","+","
+      chunck = "%s,%s,%s,%s,%s,," % (login,name,birthday,email,idUser)
       resp = make_response(redirect(url_for('filmes')))
       resp.set_cookie('dd', encondeDD(chunck))
       return resp
@@ -209,7 +206,7 @@ def validasenha(login, password):
    cursor.execute("SELECT LOGIN_USUARIO,NOME_USUARIO,DT_NASCIMENTO_USUARIO,E_MAIL_USUARIO,ID_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s AND SENHA_USUARIO=%s", (login, password))
    
    for LOGIN_USUARIO, NOME_USUARIO, DT_NASCIMENTO_USUARIO, E_MAIL_USUARIO, ID_USUARIO in cursor:
-      ret = LOGIN_USUARIO+","+NOME_USUARIO+","+DT_NASCIMENTO_USUARIO.strftime('%m/%d/%Y')+","+E_MAIL_USUARIO+","+intToStr(ID_USUARIO)
+      ret = LOGIN_USUARIO+","+NOME_USUARIO+","+DT_NASCIMENTO_USUARIO.strftime('%Y-%m-%d')+","+E_MAIL_USUARIO+","+intToStr(ID_USUARIO)
       print("senha ok")      
     
    mariadb_connection.close()
@@ -241,14 +238,14 @@ def adduserDB(login, name, birthday, email, cpassword):
       print("Error: {}".format(error))
 
    mariadb_connection.commit()
-   print "The last inserted id was: ", cursor.lastrowid   
+   print ("The last inserted id was: ", cursor.lastrowid)
 
    cursor.execute("SELECT ID_USUARIO FROM USUARIO WHERE LOGIN_USUARIO=%s", (login,))
    for ID_USUARIO in cursor:
       idUser= intToStr(ID_USUARIO)
       ret = idUser
       #insert no neo4j
-      payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:"+idUser+", login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+tdata(birthday)+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
+      payload = "{\n  \"query\" : \"create (usr1:USUARIO {id_usuario:"+idUser+", login_usuario:'"+login+"',nome_usuario:'"+name+"',dt_nascimento_usuario:'"+birthday+"',e_mail_usuario:'"+email+"',publicar:'S'})\",\n  \"params\" : { }\n}\n"   
    response = requests.request("POST", url, data=payload, headers=headers)
    print(response.text)
 
@@ -267,11 +264,11 @@ def updateuserNOK(login, name, birthday, email):
       ret = True
 
    mariadb_connection.commit()
-   print "The last inserted id was: ", cursor.lastrowid   
+   print ("The last inserted id was: ", cursor.lastrowid)
 
    if ret == False:
       #update no neo4j
-      payload = "{\n  \"query\" : \"match (u:USUARIO{login_usuario:'"+login+"'}) WITH u, u {.*} as snapshot SET u.nome_usuario = '"+name+"' SET u.dt_nascimento_usuario = '"+tdata(birthday)+"' SET u.e_mail_usuario = '"+email+"' RETURN snapshot\",\n  \"params\" : { }\n}\n"
+      payload = "{\n  \"query\" : \"match (u:USUARIO{login_usuario:'"+login+"'}) WITH u, u {.*} as snapshot SET u.nome_usuario = '"+name+"' SET u.dt_nascimento_usuario = '"+birthday+"' SET u.e_mail_usuario = '"+email+"' RETURN snapshot\",\n  \"params\" : { }\n}\n"
       response = requests.request("POST", url, data=payload, headers=headers)
       print(response.text)
 
@@ -303,7 +300,7 @@ def listMovies(idUser, nmMovie, yyMovie, skip):
 
    cursor.execute(query)
    for ID_FILME, NOME_FILME, ANO_LANC_FILME, NOTA in cursor:
-      if ret <> "[":
+      if ret != "[":
          ret += "," 
 
       notaa = intToStr(NOTA)
@@ -330,10 +327,10 @@ def updateMovieAvalDB(idUser, idFilme, dtIniAssistiu, dtFimAssistiu, resenha, no
       ret = False
 
    mariadb_connection.commit()
-   print "The last inserted id was: ", cursor.lastrowid   
+   print ("The last inserted id was: ", cursor.lastrowid)
 
    #Inclui relacionamento no neo4j
-   payload = "{\n  \"query\" : \"match (usr:USUARIO {id_usuario:%s}),(filme:FILMES_SERIES {id_filme:%s}) merge (usr)-[:ASSISTIU {dt_ini_assistido:'%s', dt_fim_assistido:'%s', resenha:'%s', nota:%s}]->(filme)\",\n  \"params\" : { }\n}\n"  % (idUser, idFilme, tdata(dtIniAssistiu), tdata(dtFimAssistiu), resenha, nota)
+   payload = "{\n  \"query\" : \"match (usr:USUARIO {id_usuario:%s}),(filme:FILMES_SERIES {id_filme:%s}) merge (usr)-[:ASSISTIU {dt_ini_assistido:'%s', dt_fim_assistido:'%s', resenha:'%s', nota:%s}]->(filme)\",\n  \"params\" : { }\n}\n"  % (idUser, idFilme, dtIniAssistiu, dtFimAssistiu, resenha, nota)
    response = requests.request("POST", url, data=payload, headers=headers)
    print(response.text)
 
@@ -352,7 +349,7 @@ def delMovieAvaliationDB(idUser, idFilme):
       ret = False
 
    mariadb_connection.commit()
-   print "The last inserted id was: ", cursor.lastrowid   
+   print ("The last inserted id was: ", cursor.lastrowid)
 
    #exclui relacionamento no neo4j
    payload = "{\n  \"query\" : \"match (usr1:USUARIO {id_usuario:%s})-[r:ASSISTIU]->(filme1:FILMES_SERIES {id_filme:%s}) delete r\",\n  \"params\" : { }\n}\n" % (idUser, idFilme)
@@ -371,7 +368,7 @@ def recommendMovie(idUser):
 
    for x in data['data']:
       for y in x:
-         if ret <> "[":
+         if ret != "[":
             ret += ","
          ret += "{\"nmFilme\":\"%s\", \"dtFilme\":\"%s\"}" % (y['data']['nome_filme'],y['data']['ano_lanc_filme'])
 
@@ -379,14 +376,14 @@ def recommendMovie(idUser):
    return json.loads(ret) 
 
 def recommendPeople(idUser):
-   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'-') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[2], month: parts[1], year: parts[0]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
+   payload = "{\n  \"query\" : \"match (usrdest:USUARIO)-[rdest:ASSISTIU]->(filme:FILMES_SERIES)<-[r:ASSISTIU]-(usr:USUARIO) with usrdest, [x in split(usrdest.dt_nascimento_usuario,'/') | toInteger(x)] as parts where usr.id_usuario = %s return distinct usrdest.nome_usuario as nome, usrdest.e_mail_usuario as e_mail, duration.between(date({day: parts[0], month: parts[1], year: parts[2]}), date()).years AS idade, count(usrdest) as ranking order by count(usrdest) desc\",\n  \"params\" : { }\n}\n" % (idUser)
 
    response = requests.request("POST", url, data=payload, headers=headers)
    data = response.json() 
    ret = "["
 
    for x in data['data']:
-      if ret <> "[":
+      if ret != "[":
          ret += ","
       ret += "{\"nome\":\"%s\",\"email\":\"%s\",\"idade\":\"%s\",\"rank\":\"%s\"}" % (x[0],x[1],str(x[2]),str(x[3]))
 
@@ -395,11 +392,6 @@ def recommendPeople(idUser):
 
 
 ## AUX ###############################################################
-
-def tdata(data):
-   #dt = data.split("-")
-   #datat = dt[2]+"/"+dt[1]+"/"+dt[0]
-   return data
 
 def encondeDD(chunck):
    if (len(chunck)%16!=0):
@@ -413,7 +405,7 @@ def intToStr(intDB):
 def getCookies():
    data = request.cookies.get('dd')
    decoded = cipher.decrypt(pybase64.urlsafe_b64decode(data))
-   return decoded.strip().split(",")
+   return decoded.decode("utf-8").strip().split(",")
 
 
 if __name__ == '__main__':
