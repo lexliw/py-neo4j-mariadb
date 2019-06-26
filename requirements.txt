@@ -1,0 +1,6 @@
+flask
+pycrypto
+mysql-connector-python
+requests
+datetime
+pybase64
