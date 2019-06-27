@@ -8,6 +8,7 @@ import requests
 import datetime
 from Crypto.Cipher import AES
 import pybase64
+import os
 
 app = Flask(__name__)
 
@@ -15,10 +16,18 @@ app = Flask(__name__)
 #sudo docker run  --publish=7474:7474 --publish=7687:7687 -v $HOME/neo4j/data:/data -v $HOME/neo4j/import:/import  neo4j
 dbuser='root'
 dbpwd='example'
-dbhost='localhost'
-dbport='8084'
 dbdata='imdbfriends'
-url = "http://localhost:7474/db/data/cypher"
+dbhost = 'localhost'
+dbport='8084'
+if "MARIADB" in os.environ:
+    dbhost=os.environ['MARIADB']
+    dbport='3306'
+
+neo4j = 'localhost'
+if "NEO4J" in os.environ:
+   neo4j=os.environ['NEO4J']
+
+url = "http://%s:7474/db/data/cypher" % (neo4j)
 headers = {
       'Content-Type': "application/json",
       'Accept': "application/json; charset=UTF-8",
@@ -409,4 +418,4 @@ def getCookies():
 
 
 if __name__ == '__main__':
-   app.run(debug = True)
+   app.run(host='0.0.0.0', debug = True)
