@@ -31,11 +31,12 @@ url = "http://%s:7474/db/data/cypher" % (neo4j)
 headers = {
       'Content-Type': "application/json",
       'Accept': "application/json; charset=UTF-8",
-      'Authorization': "Basic bmVvNGo6bmVvNGoy",
+      'Authorization': "Basic bmVvNGo6bmVvNGpuZW80ag==",
       'cache-control': "no-cache",
       'Postman-Token': "cabdfe37-849c-4aac-9b1a-65be296af5bd"
       }
-salt = '!%F=-?Jc3301'
+# Authorization o hash é o base64 do user:password
+salt = '!F=-?Jc3301'
 key32 = "{: <32}".format(salt).encode("utf-8")
 cipher = AES.new(key32, AES.MODE_ECB)
 
@@ -371,6 +372,9 @@ def delMovieAvaliationDB(idUser, idFilme):
 def recommendMovie(idUser):
    payload = "{\n  \"query\" : \"match (filmedest:FILMES_SERIES)<-[:ASSISTIU]-(usrdest:USUARIO)-[:ASSISTIU]->(filmeori:FILMES_SERIES)<-[:ASSISTIU]-(usr:USUARIO) where usr.id_usuario = %s and not exists ((usr:USUARIO)-[:ASSISTIU]->(filmedest:FILMES_SERIES)) return distinct filmedest\",\n  \"params\" : { }\n}\n" % (idUser)
 
+   print(url)
+   print(headers)
+   print(payload)
    response = requests.request("POST", url, data=payload, headers=headers)
    data = response.json() 
    ret = "["

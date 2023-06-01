@@ -49,11 +49,15 @@ Acessar http://locahost:8080 interface do banco **mariadb** usuario *root* senha
 
 Acessar http://localhost:7474 e dar carga no **neo4j**. Os arquivos .csv da pasta ./asset precisam estar na pasta ***import*** do container.
 
-executar os comandos:
+neo4j user: 'neo4j'
+password inicial: 'neo4j' mudar para 'neo4jneo4j'
+
+executar os comandos (NA LINHA DE COMANDO DO NEO4J web):
 ```
-using periodic commit load csv with headers from "file:///USUARIOS.CSV" as row merge (usr:USUARIO {id_usuario:toInteger(row.id_usuario), login_usuario:row.login_usuario, nome_usuario:row.nome_usuario, dt_nascimento_usuario:row.dt_nascimento_usuario, e_mail_usuario:row.e_mail_usuario, publicar:row.publicar})
+:auto LOAD CSV WITH HEADERS FROM "file:///USUARIOS.CSV" as row CALL{ WITH row merge (usr:USUARIO {id_usuario:toInteger(row.id_usuario), login_usuario:row.login_usuario, nome_usuario:row.nome_usuario, dt_nascimento_usuario:row.dt_nascimento_usuario, e_mail_usuario:row.e_mail_usuario, publicar:row.publicar})} IN TRANSACTIONS
 
-using periodic commit load csv with headers from "file:///FILMES_SERIES.CSV" as row merge (filmes:FILMES_SERIES {id_filme:toInteger(row.id_filme), nome_filme:row.nome_filme, ano_lanc_filme:row.ano_lanc_filme, ano_fim_filme:row.ano_fim_filme, descricao_filme:row.descricao_filme})
+:auto LOAD CSV WITH HEADERS FROM "file:///FILMES_SERIES.CSV" as row CALL{ WITH row merge (filmes:FILMES_SERIES {id_filme:toInteger(row.id_filme), nome_filme:row.nome_filme, ano_lanc_filme:row.ano_lanc_filme, ano_fim_filme:row.ano_fim_filme, descricao_filme:row.descricao_filme}) } IN TRANSACTIONS
 
-using periodic commit load csv with headers from "file:///USUARIO_ASSISTIU.CSV" as row match (usr:USUARIO {id_usuario:toInteger(row.id_usuario)}),(filme:FILMES_SERIES {id_filme:toInteger(row.id_filme)}) merge (usr)-[:ASSISTIU {dt_ini_assistido:row.dt_ini_assistido, dt_fim_assistido:row.dt_fim_assistido, resenha:row.resenha, nota:toInteger(row.nota)}]->(filme)
+:auto LOAD CSV WITH HEADERS FROM "file:///USUARIO_ASSISTIU.CSV" as row CALL{ WITH row match (usr:USUARIO {id_usuario:toInteger(row.id_usuario)}),(filme:FILMES_SERIES {id_filme:toInteger(row.id_filme)}) merge (usr)-[:ASSISTIU {dt_ini_assistido:row.dt_ini_assistido, dt_fim_assistido:row.dt_fim_assistido, resenha:row.resenha, nota:toInteger(row.nota)}]->(filme) } IN TRANSACTIONS
+
 ```
